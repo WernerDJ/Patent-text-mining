@@ -3,7 +3,7 @@ Text mining tools for patent literature
 
 Developed in R.
 
-Dataset obtained from patentscope. 
+The dataset was obtained from patentscope as an excel file. An example of the dataset is saved in the folder excel_file
 
 The WIPO search page allows to download up to 100 rows of patent data with abstracts and up 
 to 10 000 without them. Since 100 is often an unrepresentative number to text mine any technical field the abstracts have
