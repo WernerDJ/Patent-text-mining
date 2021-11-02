@@ -1,0 +1,45 @@
+library(tm)
+library(stopwords)
+library(lattice)
+library(udpipe)
+library(utf8)
+
+Corpus <- Corpus(VectorSource(Abstracts$Abstracts))
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, tolower)
+corpus <- tm_map(corpus, removeWords, stopwords("en"))
+corpus <- tm_map(corpus, stemDocument)
+
+udmodel <- udpipe_download_model(language = "english")
+udmodel_en <- udpipe_load_model(udmodel$file_model)
+x <- data.frame(udpipe_annotate(udmodel_en, x = Abstracts$Abstracts))
+
+
+## Most occuring Verbs.
+stats <- subset(x, upos %in% c("VERB")) 
+stats <- txt_freq(stats$token)
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 30), col = "slategrey", 
+         main = "Most occurring Verbs", xlab = "Freq")
+		 
+		 
+## Display most common Adjectives.
+stats <- subset(x, upos %in% c("ADJ")) 
+stats <- txt_freq(stats$token)
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 30), col = "tan3", 
+         main = "Most occurring adjectives", xlab = "Freq")
+		 
+## Group verbs & nouns.
+stats <- keywords_rake(x = x, term = "lemma", group = "doc_id", 
+                       relevant = x$upos %in% c("NOUN","VERB"))
+stats$key <- factor(stats$keyword, levels = rev(stats$keyword))
+barchart(key ~ rake, data = head(subset(stats, freq > 1), 80), col = "royalblue2", 
+         main = "Keywords identified", 
+         xlab = "Frequency")
+		 
+## Plot the WordCloud, which is the random arrangement of words.
+library(wordcloud)
+wordcloud(words = stats$key, freq = stats$freq, min.freq = 1, max.words = 400,
+          random.order = FALSE, colors = brewer.pal(7, "Dark2"))
+		 

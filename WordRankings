@@ -1,0 +1,69 @@
+library(tidytext)
+library(dplyr)
+library(ggplot2)
+
+
+nowords <- c("configur", "differ", "target", "within", "connector", "also", "combine", "high", "copyright:", "problem", "solution:", "solved:", "obtain", "made", "refer", "function", "mean", "said", "method", "consisting", "comprising", "comprise", "including", "process", "invention", "invent", "end", "relativ", "two", "wherein", "present", "shape", "least", "plural", "device", "apparatus", "within", "length", "problem", "refer", "input", "distal", "element", "fiber", "arrangement", "arranged", "relative", "one", "plural", "system", "unit", "first", "second", "determin", "control", "includes", "having", "said", "based", "has", "provided", "comprises", "arranged", "relates", "problem", "solved", "disclosed", "according", "generated", "included", "including", "comprised", "comprising", "use", "provided", "measure", "can", "may", "form", "direct", "line", "object", "computer", "respect", "disclosed", "light", "connect", "signal", "copyright", "optical", "1", "2", "3", "de", "142", "optic", "optics", "fixed", "multi", "101", "141", "set", "plurality", "core", "methods", "employing", "shaped")
+no_words <- tibble(word = nowords)
+
+
+
+text_df <- tibble(line = 1:nrow(Abstracts), text = Abstracts$ï..Abstract)
+tidy_text <- text_df %>%
+    unnest_tokens(word, text) %>%
+	anti_join(no_words) %>%
+	anti_join(stop_words)
+	
+
+tidiest <- tidy_text %>%
+    count(line, word, sort = TRUE)
+total_words <- tidiest %>% 
+  group_by(line) %>% 
+  summarize(total = sum(n))
+tidiest <- left_join(tidiest, total_words)
+
+###################################################################
+#                Ranking by Frequency
+###################################################################
+tidytext <- tidy_text %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 40) %>%
+  mutate(word = reorder(word, n)) 
+
+#####
+# graphic
+#####
+ggplot(tidytext, aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+
+
+#####################################################################
+#                Zipf’s law Ranking     #The first rank is eliminated
+#####################################################################
+freq_by_rank <- tidiest %>% 
+  group_by(line) %>% 
+  mutate(rank = row_number(), 
+         `term frequency` = n/total) %>%
+  ungroup()
+rank_subset <- freq_by_rank %>% 
+    filter(rank < 500,
+           rank > 1)
+ranks <- data.frame(word = rank_subset$word, frequ =rank_subset$'term frequency')
+topwords <- ranks[order(ranks$frequ, decreasing = TRUE),]
+topwords <- topwords[-c(9,22,30),] ################################ some words are repeated in the list, the lower frequs are eliminated ###
+
+#####
+# graphic
+#####
+p<- ggplot(data =topwords[1:30,], aes(x=reorder(word, frequ), y=frequ)) +
+  geom_col() +
+  labs(y = NULL)
+p + coord_flip()
+
+
+
+
+
+
+
